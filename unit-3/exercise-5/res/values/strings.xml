@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ACU3 Excercise 5</string>
+    <string name="lbl_activity_a">Activity A</string>
+    <string name="lbl_activity_b">Activity B</string>
+    <string name="lbl_return_result">Return Result</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_start_b">Start Activity B</string>
+</resources>
