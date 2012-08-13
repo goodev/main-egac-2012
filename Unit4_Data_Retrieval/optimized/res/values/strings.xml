@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="picasa_authority" translatable="false">sample.multithreading.PicasaDB</string>
+    <string name="picasa_faves_table" translatable="false">faves</string>
+    <string name="application_data_table" translatable="false">data</string>
+    <string name="app_name">Picasa Featured</string>
+    <string name="activity_title">Featured</string>
+    <string name="picasa_share_subject">Awesome Photo from Picasa</string>
+    <string name="share_activity_title">Share Photo</string>
+    <string name="progress_starting_update">Starting Update</string>
+    <string name="progress_connecting">Connecting</string>
+    <string name="progress_parsing">Parsing</string>
+    <string name="progress_writing">Writing to Database</string>
+    <string name="menu_share">Share</string>
+</resources>
