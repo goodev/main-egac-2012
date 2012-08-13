@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="0.0dip"
+	android:layout_height="fill_parent" android:layout_weight="3.0"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:image="http://schemas.android.com/apk/res/sample.multithreading">
+	<ProgressBar android:layout_gravity="center" android:id="@+id/photoProgress"
+		android:layout_width="wrap_content" android:layout_height="wrap_content" />
+	<sample.multithreading.ImageDownloaderView
+		android:id="@+id/photoView" android:layout_width="fill_parent"
+		android:layout_height="fill_parent" android:scaleType="centerInside"
+		image:hideShowSibling="@id/photoProgress" />
+</FrameLayout>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="?android:listPreferredItemHeight"
+	android:layout_height="?android:listPreferredItemHeight" xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:image="http://schemas.android.com/apk/res/sample.multithreading">
+	<sample.multithreading.ImageDownloaderView
+		android:id="@+id/thumbImage" android:layout_width="fill_parent"
+		android:layout_height="fill_parent" android:scaleType="centerCrop"
+		android:adjustViewBounds="true"
+		image:recycleBitmaps="true" />
+</FrameLayout>
