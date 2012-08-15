@@ -1,0 +1,28 @@
+    public final class GetImageTask extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            String picUrlStr = params[0];
+            URL picUrl;
+            InputStream is;
+            Bitmap b = null;
+            
+            if (TextUtils.isEmpty(picUrlStr)) {
+                return null;
+            }
+            
+            try {
+                picUrl = new URL(picUrlStr);
+                is = (InputStream) picUrl.getContent();
+                b = BitmapFactory.decodeStream(is);
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return b;
+        }
+    }
+
