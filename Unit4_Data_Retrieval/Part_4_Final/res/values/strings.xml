@@ -1,0 +1,11 @@
+<resources>
+
+    <string name="app_name">dp</string>
+    <string name="title_pic_detail">Pic Detail</string>
+    <string name="title_pic_list">dp</string>
+
+    <string name="picasa_authority" translatable="false">com.example.acamp.authority.PicasaProvider</string>
+    <string name="picasa_faves_table" translatable="false">faves</string>
+    <string name="application_data_table" translatable="false">data</string>
+    
+</resources>

@@ -24,8 +24,6 @@ public class PicasaProvider extends ContentProvider {
 
     // Handle to a new DatabaseHelper.
     SQLiteOpenHelper mHelper;
-//    // A projection map used to select columns from the database
-//    private final HashMap<String, String> mFeatureTableProjectionMap;
     // Uri matcher to decode incoming URIs.
     private UriMatcher mUriMatcher;
     // MIME types that apply to the results of queries
@@ -41,19 +39,12 @@ public class PicasaProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
 
-//        mFeatureTableProjectionMap = new HashMap<String, String>();
         mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         mMimeTypes = new SparseArray<String>();
 
         String authority = getContext().getString(R.string.picasa_authority);
         mHelper = new PicasaFeatured.PicasaContentDBHelper(getContext());
 
-
-//        // Create and initialize projection map for all columns. This is
-//        // simply an identity mapping.
-//        mFeatureTableProjectionMap.put(PicasaFeatured._ID, PicasaFeatured._ID);
-//        mFeatureTableProjectionMap.put(PicasaFeatured.IMAGE_THUMB_URL, PicasaFeatured.IMAGE_THUMB_URL);
-//        mFeatureTableProjectionMap.put(PicasaFeatured.IMAGE_URL, PicasaFeatured.IMAGE_URL);
         
         /*
          * Standard Android mime types using the vnd (vendor-specific) mime type
@@ -79,7 +70,6 @@ public class PicasaProvider extends ContentProvider {
     
     public static void Init(Context context) {
         if (!initialized) {
-//            new ListAssetsTask().execute(context);
             
             // adapted from Picasa sample
             Intent initIntent = new Intent(context, NetworkDownloadService.class);
