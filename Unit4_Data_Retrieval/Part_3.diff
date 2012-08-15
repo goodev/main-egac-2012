@@ -1,0 +1,494 @@
+diff -BburN Part_2_Final/AndroidManifest.xml Part_3_Final/AndroidManifest.xml
+--- Part_2_Final/AndroidManifest.xml	2012-08-15 07:21:36.000000000 +0100
++++ Part_3_Final/AndroidManifest.xml	2012-08-15 09:33:09.000000000 +0100
+@@ -3,14 +3,29 @@
+     android:versionCode="1"
+     android:versionName="1.0" >
+ 
++    <!--
++    It would be a good idea to make this work on everything from API level 7
++    onward. But for purposes of illustrating general concepts, I'll focus on targeting devices
++    that the attendees will have with them.
++    -->
+     <uses-sdk
+         android:minSdkVersion="16"
+         android:targetSdkVersion="16" />
+ 
++    <!-- 
++    Only a n00b forgets to declare internet permission on a feed reader.
++    -->
++    <uses-permission android:name="android.permission.INTERNET" />
++
+     <application
+         android:icon="@drawable/ic_launcher"
+         android:label="@string/app_name"
+         android:theme="@style/AppTheme" >
++
++        <!--
++        Main Activity.  Shows the list of items (pictures), and (on large screens)
++        also the detail Fragment.
++        -->
+         <activity
+             android:name=".PicListActivity"
+             android:label="@string/title_pic_list" >
+@@ -20,6 +35,11 @@
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
++
++        <!--
++        Hosts the detail Fragment on displays too small to show it next to the
++        ListView.
++        -->
+         <activity
+             android:name=".PicDetailActivity"
+             android:label="@string/title_pic_detail" >
+@@ -27,6 +47,13 @@
+                 android:name="android.support.PARENT_ACTIVITY"
+                 android:value=".PicListActivity" />
+         </activity>
++
++        <!-- 
++        Fetches network content in a background task and provides it to the content Views. 
++        -->
++        <service
++            android:name=".NetworkDownloadService"
++            android:exported="false" />
+     </application>
+ 
+ </manifest>
+\ No newline at end of file
+diff -BburN Part_2_Final/src/com/example/acamp/dip/Constants.java Part_3_Final/src/com/example/acamp/dip/Constants.java
+--- Part_2_Final/src/com/example/acamp/dip/Constants.java	1970-01-01 01:00:00.000000000 +0100
++++ Part_3_Final/src/com/example/acamp/dip/Constants.java	2012-08-15 09:33:10.000000000 +0100
+@@ -0,0 +1,9 @@
++package com.example.acamp.dip;
++
++public class Constants {
++    static public final boolean LOGV = true;
++    public static final String IMAGE_THUMB_URL = "thumbURL";
++    public static final String IMAGE_URL = "imageURL";
++    private static final int NUM_LINES = 10;
++    public static final String PICASA_RSS_URL = "http://picasaweb.google.com/data/feed/base/featured?alt=rss&kind=photo&access=public&slabel=featured&hl=en_US&imgmax=1024&max-results=10";   
++}
+diff -BburN Part_2_Final/src/com/example/acamp/dip/NetworkDownloadService.java Part_3_Final/src/com/example/acamp/dip/NetworkDownloadService.java
+--- Part_2_Final/src/com/example/acamp/dip/NetworkDownloadService.java	1970-01-01 01:00:00.000000000 +0100
++++ Part_3_Final/src/com/example/acamp/dip/NetworkDownloadService.java	2012-08-15 09:33:10.000000000 +0100
+@@ -0,0 +1,104 @@
++package com.example.acamp.dip;
++
++import java.io.IOException;
++import java.net.HttpURLConnection;
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.net.URLConnection;
++import java.util.Locale;
++import java.util.Vector;
++
++import org.xmlpull.v1.XmlPullParserException;
++
++import com.example.acamp.dip.dummy.DummyContent;
++
++import android.app.IntentService;
++import android.content.ContentValues;
++import android.content.Intent;
++import android.os.Process;
++import android.util.Log;
++
++public class NetworkDownloadService extends IntentService {
++
++    public static final String LOG_TAG = "PicasaService";
++    private static final boolean NO_NETWORK_TEST = false;
++
++    // a reasonable user-agent string
++    private static final String USER_AGENT = "Mozilla/5.0 (Linux; U; Android "
++            + android.os.Build.VERSION.RELEASE + ";"
++            + Locale.getDefault().toString() + "; " + android.os.Build.DEVICE
++            + "/" + android.os.Build.ID + ")";
++
++    public NetworkDownloadService(String name) {
++        super(name);
++    }
++    public NetworkDownloadService() {
++        super("PicasaFeaturedService");
++    }
++    
++    @Override
++    protected void onHandleIntent(Intent paramIntent) {
++
++        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
++        String str = paramIntent.getDataString();
++        URL localURL;
++        
++        try {
++            localURL = new URL(str);
++            URLConnection localURLConnection = localURL.openConnection();
++
++            if ((localURLConnection instanceof HttpURLConnection)) {
++
++                HttpURLConnection localHttpURLConnection = (HttpURLConnection) localURLConnection;
++                localHttpURLConnection.setRequestProperty("User-Agent",
++                        USER_AGENT);
++
++                boolean bInsert;
++                    bInsert = true;
++
++                int responseCode = localHttpURLConnection.getResponseCode();
++                switch (responseCode) {
++                case 200:
++
++                    PicasaPullParser localPicasaPullParser = new PicasaPullParser();
++                    localPicasaPullParser.parseXml(
++                            localURLConnection.getInputStream());
++
++// TODO: Uncomment to update ListView
++                    Intent intent = new Intent();
++                    intent.setAction(DummyContent.ACTION_UPDATE);
++                    sendBroadcast(intent);
++
++// TODO: Uncomment to populate ContentProvider
++//                    Vector<ContentValues> cvv = localPicasaPullParser
++//                            .getImages();
++//
++//                    int size = cvv.size();
++//                    ContentValues[] cvArray = new ContentValues[size];
++//                    cvArray = cvv.toArray(cvArray);
++//                    
++//                    getContentResolver().bulkInsert(
++//                            PicasaContentDB.getUriByType(this,
++//                                    PicasaContentDB.METADATA_QUERY), cvArray);
++//                    }
++                    break;
++                case 304:
++                    Log.d(LOG_TAG, "Response not modified.");
++                    break;
++                }
++            }
++
++        } catch (MalformedURLException e) {
++            // TODO Auto-generated catch block
++            e.printStackTrace();
++        } catch (IOException e) {
++            // TODO Auto-generated catch block
++            e.printStackTrace();
++        } catch (XmlPullParserException e) {
++            // TODO Auto-generated catch block
++            e.printStackTrace();
++        }
++        Log.d(LOG_TAG, "onHandleIntent Complete");
++    }
++
++}
+diff -BburN Part_2_Final/src/com/example/acamp/dip/PicDetailFragment.java Part_3_Final/src/com/example/acamp/dip/PicDetailFragment.java
+--- Part_2_Final/src/com/example/acamp/dip/PicDetailFragment.java	2012-08-15 07:21:36.000000000 +0100
++++ Part_3_Final/src/com/example/acamp/dip/PicDetailFragment.java	2012-08-15 09:33:10.000000000 +0100
+@@ -1,11 +1,16 @@
+ package com.example.acamp.dip;
+ 
+ import java.io.IOException;
++import java.io.InputStream;
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.concurrent.ExecutionException;
+ 
+ import android.content.Context;
+ import android.content.SharedPreferences;
+-import android.content.res.AssetManager;
+-import android.graphics.drawable.Drawable;
++import android.graphics.Bitmap;
++import android.graphics.BitmapFactory;
++import android.os.AsyncTask;
+ import android.os.Bundle;
+ import android.support.v4.app.Fragment;
+ import android.text.TextUtils;
+@@ -13,7 +18,6 @@
+ import android.view.View;
+ import android.view.ViewGroup;
+ import android.widget.ImageView;
+-import android.widget.TextView;
+ 
+ import com.example.acamp.dip.dummy.DummyContent;
+ 
+@@ -22,6 +26,7 @@
+     public static final String ARG_ITEM_ID = "item_id";
+ 
+     DummyContent.DummyItem mItem;
++    ImageView mImageView;
+ 
+     public PicDetailFragment() {
+     }
+@@ -46,20 +51,59 @@
+     public View
+             onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+         View rootView = inflater.inflate(R.layout.fragment_pic_detail, container, false);
++        mImageView = (ImageView) rootView.findViewById(R.id.pic_detail_pic);
++
+         if (mItem != null) {
+ 
+-            // The documentation implies that ImageView.setImageDrawable
++            if (mImageView != null) {
++
++                Bitmap b = null;
++                GetImageTask git = new GetImageTask();
++
++                // The documentation implies that ImageView.setImageBitmap
+             // does not run on the UI thread, so we don't need to do this in
+             // an AsyncTask.
+-            AssetManager am = getActivity().getAssets();
+             try {
+-                Drawable d = Drawable.createFromStream(am.open(mItem.content), null);
+-                ((ImageView) rootView.findViewById(R.id.pic_detail_pic)).setImageDrawable(d);
+-            } catch (IOException e) {
+-                ((TextView) rootView.findViewById(R.id.pic_detail))
+-                        .setText("Could not load asset: " + mItem.content);
++                    b = git.execute(mItem.content).get();
++                    mImageView.setImageBitmap(b);
++                } catch (InterruptedException e) {
++                    // TODO Auto-generated catch block
++                    e.printStackTrace();
++                } catch (ExecutionException e) {
++                    // TODO Auto-generated catch block
++                    e.printStackTrace();
++                }
+             }
+         }
+         return rootView;
+     }
++
++    public final class GetImageTask extends AsyncTask<String, Void, Bitmap> {
++
++        @Override
++        protected Bitmap doInBackground(String... params) {
++            String picUrlStr = params[0];
++            URL picUrl;
++            InputStream is;
++            Bitmap b = null;
++
++            if (TextUtils.isEmpty(picUrlStr)) {
++                return null;
++            }
++
++            try {
++                picUrl = new URL(picUrlStr);
++                is = (InputStream) picUrl.getContent();
++                b = BitmapFactory.decodeStream(is);
++            } catch (MalformedURLException e) {
++                // TODO Auto-generated catch block
++                e.printStackTrace();
++            } catch (IOException e) {
++                // TODO Auto-generated catch block
++                e.printStackTrace();
++            }
++            return b;
++        }
++    }
++
+ }
+diff -BburN Part_2_Final/src/com/example/acamp/dip/PicListFragment.java Part_3_Final/src/com/example/acamp/dip/PicListFragment.java
+--- Part_2_Final/src/com/example/acamp/dip/PicListFragment.java	2012-08-15 07:21:36.000000000 +0100
++++ Part_3_Final/src/com/example/acamp/dip/PicListFragment.java	2012-08-15 09:33:10.000000000 +0100
+@@ -1,15 +1,20 @@
+ package com.example.acamp.dip;
+ 
+-import com.example.acamp.dip.dummy.DummyContent;
+-
+ import android.R;
+ import android.app.Activity;
++import android.content.BroadcastReceiver;
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
+ import android.os.Bundle;
+ import android.support.v4.app.ListFragment;
+ import android.view.View;
+ import android.widget.ArrayAdapter;
+ import android.widget.ListView;
+ 
++import com.example.acamp.dip.dummy.DummyContent;
++import com.example.acamp.dip.dummy.DummyContent.DummyItem;
++
+ public class PicListFragment extends ListFragment {
+ 
+     private static final String STATE_ACTIVATED_POSITION = "activated_position";
+@@ -17,6 +22,11 @@
+     private Callbacks mCallbacks = sDummyCallbacks;
+     private int mActivatedPosition = ListView.INVALID_POSITION;
+ 
++    // Instantiate a Broadcast Receiver so that the Network Download Service
++    // can message the List Fragment that the array backing the ListView has
++    // been updated.
++    private BroadcastReceiver mReceiver;
++    
+     public interface Callbacks {
+ 
+         public void onItemSelected(String id);
+@@ -38,6 +48,26 @@
+                 R.layout.simple_list_item_activated_1,
+                 R.id.text1,
+                 DummyContent.ITEMS));
++        
++        // Set up the broadcast mReceiver so that the ArrayAdapter can update.
++        IntentFilter filter = new IntentFilter();
++        filter.addAction(DummyContent.ACTION_UPDATE);
++
++        mReceiver = new BroadcastReceiver() {
++            @Override
++            public void onReceive(Context context, Intent intent) {
++                @SuppressWarnings("unchecked")
++                ArrayAdapter<DummyContent.DummyItem> aa = (ArrayAdapter<DummyItem>) getListAdapter();
++                aa.notifyDataSetChanged();
++            }
++          };
++          getActivity().registerReceiver(mReceiver, filter);
++    }
++
++    @Override
++    public void onDestroy() {
++        getActivity().unregisterReceiver(mReceiver);
++        super.onDestroy();
+     }
+ 
+     @Override
+diff -BburN Part_2_Final/src/com/example/acamp/dip/PicasaPullParser.java Part_3_Final/src/com/example/acamp/dip/PicasaPullParser.java
+--- Part_2_Final/src/com/example/acamp/dip/PicasaPullParser.java	1970-01-01 01:00:00.000000000 +0100
++++ Part_3_Final/src/com/example/acamp/dip/PicasaPullParser.java	2012-08-15 09:33:10.000000000 +0100
+@@ -0,0 +1,90 @@
++package com.example.acamp.dip;
++
++import java.io.IOException;
++import java.io.InputStream;
++
++import org.xml.sax.helpers.DefaultHandler;
++import org.xmlpull.v1.XmlPullParser;
++import org.xmlpull.v1.XmlPullParserException;
++import org.xmlpull.v1.XmlPullParserFactory;
++
++import android.util.Log;
++
++import com.example.acamp.dip.dummy.DummyContent;
++
++public class PicasaPullParser extends DefaultHandler {
++    private static final String CONTENT = "media:content";
++    private static final String ITEM = "item";
++//    private static final int NUM_IMAGES = 100;
++    private static final String THUMBNAIL = "media:thumbnail";
++//    private static ContentValues mImage;
++//    private Vector<ContentValues> mImages;
++    private static final String LOG_TAG = "PPP";
++
++//    public Vector<ContentValues> getImages() {
++//        return this.mImages;
++//    }
++    
++    public void parseXml(InputStream paramInputStream)
++            throws XmlPullParserException, IOException {
++        XmlPullParserFactory localXmlPullParserFactory = XmlPullParserFactory
++                .newInstance();
++        localXmlPullParserFactory.setNamespaceAware(false);
++        XmlPullParser localXmlPullParser = localXmlPullParserFactory
++                .newPullParser();
++        localXmlPullParser.setInput(paramInputStream, null);
++        int i = localXmlPullParser.getEventType();
++        int j = 1;
++        if (i != 0)
++            return;
++//        this.mImages = new Vector<ContentValues>(NUM_IMAGES);
++        while (true) {
++            int k = localXmlPullParser.next();
++            if (Thread.currentThread().isInterrupted())
++                throw new XmlPullParserException("Cancelled");
++            else if (k == XmlPullParser.END_DOCUMENT)
++                break;
++            else if (k == XmlPullParser.START_DOCUMENT)
++                continue;
++            else if (k == XmlPullParser.START_TAG) {
++                String str1 = localXmlPullParser.getName();
++                if (str1.equalsIgnoreCase(ITEM)) {
++                    if ( Constants.LOGV ) {
++                        Log.d(LOG_TAG, "ITEM");
++                    }
++//                    mImage = new ContentValues();
++                } else {
++                    String key;
++                    if (str1.equalsIgnoreCase(CONTENT)) {
++                        if ( Constants.LOGV ) {
++                            Log.v(LOG_TAG, "CONTENT");
++                        }
++                        key = Constants.IMAGE_URL;
++                    } else if (str1.equalsIgnoreCase(THUMBNAIL)) {
++                        if ( Constants.LOGV ) {
++                            Log.v(LOG_TAG, "THUMBNAIL");
++                        }
++                        key = Constants.IMAGE_THUMB_URL;
++                    } else {
++                        continue;
++                    }
++                    String value = localXmlPullParser.getAttributeValue(null, "url");
++                    if (value == null)
++                        break;
++//                    mImage.put(key, value);
++                    if (key.equals(Constants.IMAGE_URL)) {
++                        DummyContent.addItem("Image " + j, value);                        
++                    }
++                }
++            }
++            else if ((k == XmlPullParser.END_TAG)
++                    && (localXmlPullParser.getName().equalsIgnoreCase(ITEM))
++//                    && (mImage != null)
++                    ) {
++//                this.mImages.add(mImage);
++//                mImage = null;
++                j++;
++            }
++        }
++    }
++}
+diff -BburN Part_2_Final/src/com/example/acamp/dip/dummy/DummyContent.java Part_3_Final/src/com/example/acamp/dip/dummy/DummyContent.java
+--- Part_2_Final/src/com/example/acamp/dip/dummy/DummyContent.java	2012-08-15 07:21:36.000000000 +0100
++++ Part_3_Final/src/com/example/acamp/dip/dummy/DummyContent.java	2012-08-15 09:33:10.000000000 +0100
+@@ -7,10 +7,15 @@
+ import java.util.Map;
+ 
+ import android.content.Context;
++import android.content.Intent;
+ import android.content.res.AssetManager;
++import android.net.Uri;
+ import android.os.AsyncTask;
+ import android.util.Log;
+ 
++import com.example.acamp.dip.Constants;
++import com.example.acamp.dip.NetworkDownloadService;
++
+ public class DummyContent {
+ 
+     public static class DummyItem {
+@@ -31,6 +36,7 @@
+ 
+     public static final String PREFS_GROUP = "DummyPrefs";
+     public static final String LAST_ITEM_KEY = "ItemId";
++    public static final String ACTION_UPDATE = "com.example.acamp.fivewhat.dummy.update";
+ 
+     public static List<DummyItem> ITEMS = new ArrayList<DummyItem>();
+     public static Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
+@@ -39,7 +45,10 @@
+ 
+     public static void Init(Context context) {
+         if (!initialized) {
+-            new ListAssetsTask().execute(context);
++            Intent initIntent = new Intent(context, NetworkDownloadService.class);
++            Uri localUri = Uri.parse(Constants.PICASA_RSS_URL);
++            initIntent.setData(localUri);
++            context.startService(initIntent);
+             initialized = true;
+         }
+     }
+@@ -48,6 +57,9 @@
+         ITEMS.add(item);
+         ITEM_MAP.put(item.id, item);
+     }
++    public static void addItem(String key, String content) {
++        addItem(new DummyItem(key, content));
++    }
+ 
+     public static class ListAssetsTask extends AsyncTask<Context, Void, String[]> {
+ 
