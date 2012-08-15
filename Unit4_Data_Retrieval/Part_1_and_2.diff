@@ -1,0 +1,283 @@
+Only in Part_2_Final/assets: images
+Binary files Part_1_Base_Proj/ic_launcher-web.png and Part_2_Final/ic_launcher-web.png differ
+Binary files Part_1_Base_Proj/res/drawable-hdpi/ic_launcher.png and Part_2_Final/res/drawable-hdpi/ic_launcher.png differ
+Binary files Part_1_Base_Proj/res/drawable-ldpi/ic_launcher.png and Part_2_Final/res/drawable-ldpi/ic_launcher.png differ
+Binary files Part_1_Base_Proj/res/drawable-mdpi/ic_launcher.png and Part_2_Final/res/drawable-mdpi/ic_launcher.png differ
+Binary files Part_1_Base_Proj/res/drawable-xhdpi/ic_launcher.png and Part_2_Final/res/drawable-xhdpi/ic_launcher.png differ
+diff -Bbur Part_1_Base_Proj/res/layout/fragment_pic_detail.xml Part_2_Final/res/layout/fragment_pic_detail.xml
+--- Part_1_Base_Proj/res/layout/fragment_pic_detail.xml	2012-08-15 04:53:55.000000000 +0100
++++ Part_2_Final/res/layout/fragment_pic_detail.xml	2012-08-15 07:21:36.000000000 +0100
+@@ -1,8 +1,22 @@
+-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:tools="http://schemas.android.com/tools"
+-    style="?android:attr/textAppearanceLarge"
+-    android:id="@+id/pic_detail"
++    android:id="@+id/fragment_pic_container"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
++    android:orientation="vertical" >
++
++    <TextView
++        android:id="@+id/pic_detail"
++        style="?android:attr/textAppearanceLarge"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
+     android:padding="16dp"
+     tools:context=".PicDetailFragment" />
++
++    <ImageView
++        android:id="@+id/pic_detail_pic"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent"
++        android:contentDescription="Large image" />
++
++</LinearLayout>
+diff -Bbur Part_1_Base_Proj/res/values/strings.xml Part_2_Final/res/values/strings.xml
+--- Part_1_Base_Proj/res/values/strings.xml	2012-08-15 04:53:55.000000000 +0100
++++ Part_2_Final/res/values/strings.xml	2012-08-15 07:21:36.000000000 +0100
+@@ -1,7 +1,7 @@
+ <resources>
+ 
+-    <string name="app_name">Dip</string>
++    <string name="app_name">dp</string>
+     <string name="title_pic_detail">Pic Detail</string>
+-    <string name="title_pic_list">Pics</string>
++    <string name="title_pic_list">dp</string>
+ 
+ </resources>
+\ No newline at end of file
+diff -Bbur Part_1_Base_Proj/src/com/example/acamp/dip/PicDetailFragment.java Part_2_Final/src/com/example/acamp/dip/PicDetailFragment.java
+--- Part_1_Base_Proj/src/com/example/acamp/dip/PicDetailFragment.java	2012-08-15 04:53:55.000000000 +0100
++++ Part_2_Final/src/com/example/acamp/dip/PicDetailFragment.java	2012-08-15 07:21:36.000000000 +0100
+@@ -1,14 +1,22 @@
+ package com.example.acamp.dip;
+ 
+-import com.example.acamp.dip.dummy.DummyContent;
++import java.io.IOException;
+ 
++import android.content.Context;
++import android.content.SharedPreferences;
++import android.content.res.AssetManager;
++import android.graphics.drawable.Drawable;
+ import android.os.Bundle;
+ import android.support.v4.app.Fragment;
++import android.text.TextUtils;
+ import android.view.LayoutInflater;
+ import android.view.View;
+ import android.view.ViewGroup;
++import android.widget.ImageView;
+ import android.widget.TextView;
+ 
++import com.example.acamp.dip.dummy.DummyContent;
++
+ public class PicDetailFragment extends Fragment {
+ 
+     public static final String ARG_ITEM_ID = "item_id";
+@@ -23,15 +31,34 @@
+         super.onCreate(savedInstanceState);
+         if (getArguments().containsKey(ARG_ITEM_ID)) {
+             mItem = DummyContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
++        } else {
++            SharedPreferences sp =
++                    getActivity().getSharedPreferences(DummyContent.PREFS_GROUP,
++                            Context.MODE_PRIVATE);
++            String lastItemKey = sp.getString(DummyContent.LAST_ITEM_KEY, "");
++            if (!TextUtils.isEmpty(lastItemKey)) {
++                mItem = DummyContent.ITEM_MAP.get(lastItemKey);
++            }
+         }
+     }
+ 
+     @Override
+-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+-            Bundle savedInstanceState) {
++    public View
++            onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+         View rootView = inflater.inflate(R.layout.fragment_pic_detail, container, false);
+         if (mItem != null) {
+-            ((TextView) rootView.findViewById(R.id.pic_detail)).setText(mItem.content);
++
++            // The documentation implies that ImageView.setImageDrawable
++            // does not run on the UI thread, so we don't need to do this in
++            // an AsyncTask.
++            AssetManager am = getActivity().getAssets();
++            try {
++                Drawable d = Drawable.createFromStream(am.open(mItem.content), null);
++                ((ImageView) rootView.findViewById(R.id.pic_detail_pic)).setImageDrawable(d);
++            } catch (IOException e) {
++                ((TextView) rootView.findViewById(R.id.pic_detail))
++                        .setText("Could not load asset: " + mItem.content);
++            }
+         }
+         return rootView;
+     }
+diff -Bbur Part_1_Base_Proj/src/com/example/acamp/dip/PicListActivity.java Part_2_Final/src/com/example/acamp/dip/PicListActivity.java
+--- Part_1_Base_Proj/src/com/example/acamp/dip/PicListActivity.java	2012-08-15 04:53:55.000000000 +0100
++++ Part_2_Final/src/com/example/acamp/dip/PicListActivity.java	2012-08-15 07:21:36.000000000 +0100
+@@ -1,39 +1,57 @@
+ package com.example.acamp.dip;
+ 
++import android.content.Context;
+ import android.content.Intent;
++import android.content.SharedPreferences;
++import android.content.SharedPreferences.Editor;
+ import android.os.Bundle;
+ import android.support.v4.app.FragmentActivity;
+-import android.support.v4.app.NavUtils;
+-import android.view.MenuItem;
++import android.text.TextUtils;
+ 
+-public class PicListActivity extends FragmentActivity
+-        implements PicListFragment.Callbacks {
++import com.example.acamp.dip.dummy.DummyContent;
++
++public class PicListActivity extends FragmentActivity implements PicListFragment.Callbacks {
+ 
+     private boolean mTwoPane;
++    private String mItemSelected;
+ 
+     @Override
+     public void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_pic_list);
+ 
++        // Initialize our dummy data
++        // Should probably be done at application scope,
++        // but I feel lazy
++        DummyContent.Init(this);
++
+         if (findViewById(R.id.pic_detail_container) != null) {
+             mTwoPane = true;
+-            ((PicListFragment) getSupportFragmentManager()
+-                    .findFragmentById(R.id.pic_list))
++            ((PicListFragment) getSupportFragmentManager().findFragmentById(R.id.pic_list))
+                     .setActivateOnItemClick(true);
+         }
++
++        // If two-pane view, then if first launch, try to restore last item viewed
++        if (mTwoPane && (savedInstanceState == null)) {
++            SharedPreferences sp =
++                    getSharedPreferences(DummyContent.PREFS_GROUP, Context.MODE_PRIVATE);
++            mItemSelected = sp.getString(DummyContent.LAST_ITEM_KEY, "");
++            if (!TextUtils.isEmpty(mItemSelected)) {
++                this.onItemSelected(mItemSelected);
++            }
++        }
+     }
+ 
+     @Override
+     public void onItemSelected(String id) {
++        mItemSelected = id;
+         if (mTwoPane) {
+             Bundle arguments = new Bundle();
+             arguments.putString(PicDetailFragment.ARG_ITEM_ID, id);
+             PicDetailFragment fragment = new PicDetailFragment();
+             fragment.setArguments(arguments);
+-            getSupportFragmentManager().beginTransaction()
+-                    .replace(R.id.pic_detail_container, fragment)
+-                    .commit();
++            getSupportFragmentManager().beginTransaction().replace(R.id.pic_detail_container,
++                    fragment).commit();
+ 
+         } else {
+             Intent detailIntent = new Intent(this, PicDetailActivity.class);
+@@ -41,4 +59,16 @@
+             startActivity(detailIntent);
+         }
+     }
++
++    @Override
++    protected void onStop() {
++        if (!TextUtils.isEmpty(mItemSelected)) {
++            SharedPreferences sp =
++                    getSharedPreferences(DummyContent.PREFS_GROUP, Context.MODE_PRIVATE);
++            Editor spe = sp.edit();
++            spe.putString(DummyContent.LAST_ITEM_KEY, mItemSelected);
++            spe.commit();
++        }
++        super.onStop();
++    }
+ }
+diff -Bbur Part_1_Base_Proj/src/com/example/acamp/dip/dummy/DummyContent.java Part_2_Final/src/com/example/acamp/dip/dummy/DummyContent.java
+--- Part_1_Base_Proj/src/com/example/acamp/dip/dummy/DummyContent.java	2012-08-15 04:53:55.000000000 +0100
++++ Part_2_Final/src/com/example/acamp/dip/dummy/DummyContent.java	2012-08-15 07:21:36.000000000 +0100
+@@ -1,10 +1,16 @@
+ package com.example.acamp.dip.dummy;
+ 
++import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ 
++import android.content.Context;
++import android.content.res.AssetManager;
++import android.os.AsyncTask;
++import android.util.Log;
++
+ public class DummyContent {
+ 
+     public static class DummyItem {
+@@ -19,21 +25,56 @@
+ 
+         @Override
+         public String toString() {
+-            return content;
++            return id;
+         }
+     }
+ 
++    public static final String PREFS_GROUP = "DummyPrefs";
++    public static final String LAST_ITEM_KEY = "ItemId";
++
+     public static List<DummyItem> ITEMS = new ArrayList<DummyItem>();
+     public static Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
+ 
+-    static {
+-        addItem(new DummyItem("1", "Item 1"));
+-        addItem(new DummyItem("2", "Item 2"));
+-        addItem(new DummyItem("3", "Item 3"));
++    public static boolean initialized = false;
++
++    public static void Init(Context context) {
++        if (!initialized) {
++            new ListAssetsTask().execute(context);
++            initialized = true;
++        }
+     }
+ 
+     private static void addItem(DummyItem item) {
+         ITEMS.add(item);
+         ITEM_MAP.put(item.id, item);
+     }
++
++    public static class ListAssetsTask extends AsyncTask<Context, Void, String[]> {
++
++        Context mContext = null;
++        String[] mAssetFiles = null;
++
++        static final String ASSET_IMG_DIR = "images";
++
++        @Override
++        protected String[] doInBackground(Context... params) {
++
++            mContext = params[0];
++
++            AssetManager assetManager = mContext.getAssets();
++
++            try {
++                mAssetFiles = assetManager.list(ASSET_IMG_DIR);
++            } catch (IOException e) {
++                Log.e("tag", e.getMessage());
++            }
++
++            for (String filename : mAssetFiles) {
++                addItem(new DummyItem(filename, ASSET_IMG_DIR + java.io.File.separator + filename));
++            }
++            return mAssetFiles;
++        }
++
++    } // ListAssetsTask
++
+ }
