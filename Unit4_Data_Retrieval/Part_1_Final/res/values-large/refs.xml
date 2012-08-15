@@ -1,0 +1,3 @@
+<resources>
+    <item type="layout" name="activity_pic_list">@layout/activity_pic_twopane</item>
+</resources>

@@ -1,0 +1,7 @@
+<resources>
+
+    <string name="app_name">Dip</string>
+    <string name="title_pic_detail">Pic Detail</string>
+    <string name="title_pic_list">Pics</string>
+
+</resources>
