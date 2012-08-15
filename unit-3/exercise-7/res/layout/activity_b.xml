@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@color/dark_yellow"
+              android:padding="8dip">
+    <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/lbl_activity_b"
+            android:gravity="center_horizontal"
+            android:textSize="@dimen/font_large"
+            android:textColor="@color/light_yellow"
+            android:paddingBottom="16dip"/>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:orientation="vertical"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_gravity="center_horizontal">
+
+        <EditText android:id="@+id/location"
+                  android:layout_width="300dp"
+                  android:hint="Enter a location query"
+                  android:layout_height="wrap_content"/>
+
+        <Button android:id="@+id/btn_start_map"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:text="@string/btn_start_map"
+                android:onClick="findOnMap"
+                android:layout_gravity="center_horizontal">
+        </Button>
+    </LinearLayout>
+
+</LinearLayout>
+
+
+
+
+
+
+

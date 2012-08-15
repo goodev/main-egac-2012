@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ACU3 Excercise 6</string>
+    <string name="lbl_activity_a">Activity A</string>
+    <string name="lbl_activity_b">Activity B</string>
+    <string name="btn_start_b">Start Activity B</string>
+    <string name="btn_start_map">Find on Map</string>
+</resources>
